@@ -1,4 +1,3 @@
-
 local p = vim.g.bootstrap.paths
 
 -- Bootstrap lazy
