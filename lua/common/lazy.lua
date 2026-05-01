@@ -27,6 +27,6 @@ require("lazy").setup({
     { import = p.lazy_plugins  },
   },
   root = p.lazy_data,
-  checker = { enabled = true },
+  checker = { enabled = false },
 })
 
