@@ -20,6 +20,7 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 -- Init lazy
+vim.g.logger.debug("Plugins: " .. p.lazy_plugins)
 
 require("lazy").setup({
   spec = {

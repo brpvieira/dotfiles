@@ -6,14 +6,14 @@ function GetVersionString()
 end
 
 local version = GetVersionString()
-local config = vim.fn.stdpath("config") .. "/" .. version
+local config = vim.fn.stdpath("config") .. "/lua/" .. version
 local data = vim.fn.stdpath("data") .. "/" .. version
 
 local paths = {
   config = config,
   data = data,
   lazy_data = data .. "/lazy",
-  lazy_plugins = config .. "/plugins",
+  lazy_plugins = version .. "/plugins",
   config = config 
 }
 
