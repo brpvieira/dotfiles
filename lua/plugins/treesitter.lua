@@ -26,13 +26,14 @@ return { -- Highlight, edit, and navigate code
     branch = 'main',
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter-intro`
     config = function()
-      require('nvim-treesitter.configs').setup({
-          ensure_installed = parsers,
-          sync_install = false,
-          auto_install = true,
-          indent = { enable = true }
-      })
-      vim.wo.foldmethod = 'expr'
-      vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+        require('nvim-treesitter.configs').setup({
+            ensure_installed = parsers,
+            sync_install = false,
+            auto_install = true,
+            indent = { enable = true }
+        })
+        vim.wo.foldmethod = 'expr'
+        vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+        vim.opt.foldlevelstart = 99
     end,
-  }
+}
