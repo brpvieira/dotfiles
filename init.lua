@@ -1,5 +1,6 @@
 require("common/bootstrap")
 require("common/globals")
 require("common/set")
+require("common/diagnostics")
 require("common/keys")
 require("common/lazy")
