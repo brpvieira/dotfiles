@@ -23,7 +23,7 @@ return { -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
     lazy = false,
     build = ':TSUpdate',
-    branch = 'main',
+    branch = 'master',
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter-intro`
     config = function()
         require('nvim-treesitter.configs').setup({
