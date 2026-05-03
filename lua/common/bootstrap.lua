@@ -14,15 +14,12 @@ local paths = {
   data = data,
   lazy_data = data .. "/lazy",
   lazy_plugins = version .. "/plugins",
-  config = config 
 }
 
 vim.opt.rtp:prepend(paths.data)
 
-local config = {
+vim.g.bootstrap = {
   prefix = version,
   paths = paths
 }
-
-vim.g.bootstrap = config 
 
