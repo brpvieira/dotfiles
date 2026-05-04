@@ -51,7 +51,7 @@ vim.opt.updatetime = 125
 vim.opt.colorcolumn = "80"
 
 -- Decrease mapped sequence wait time
-vim.o.timeoutlen = 125
+vim.o.timeoutlen = 500
 
 -- Configure how new splits should be opened
 vim.o.splitright = true
