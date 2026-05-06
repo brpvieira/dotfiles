@@ -42,6 +42,8 @@ return {
     require('mini.move').setup()
 
     require('mini.pairs').setup()
+
+    require('mini.trailspace').setup()
     -- ... and there is more!
     --  Check out: https://github.com/nvim-mini/mini.nvim
   end,

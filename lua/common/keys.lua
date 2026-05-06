@@ -34,3 +34,8 @@ vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = 'Jump 1/2 page [d]own'})
 vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = 'Jump 1/2 page [u]p'})
 vim.keymap.set("n", "n", "nzzzv", { desc = '[n]ext search hit'})
 vim.keymap.set("n", "N", "Nzzzv", { desc = '[N]ext search hit'})
+
+vim.keymap.set("n", "<leader>ws", function()
+    MiniTrailspace.trim()
+    MiniTrailspace.trim_last_lines()
+end, { desc = 'Trim trailing [w]hite[s]pace'})

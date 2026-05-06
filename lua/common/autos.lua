@@ -18,5 +18,8 @@ vim.api.nvim_create_autocmd({ "BufWritePre" }, {
 	desc = "Clear trailling whitespace on write",
 	group = group,
 	pattern = "*",
-	command = [[%s/\s\+$//e]],
+	callback = function()
+		MiniTrailspace.trim()
+		MiniTrailspace.trim_last_lines()
+	end
 })
