@@ -148,9 +148,9 @@ nnoremap <leader>Y gg"+yG
 " delete into void register
 nnoremap <leader>d "_d
 vnoremap <leader>d "_d
-" Run make with F5
-nnoremap <F5> :make<CR>
 
+" Run make with F5
+nnoremap <silent> <F5> :silent make! \| redraw!<CR>
 "------------------------------------------------------------------------------
 " Better QuickFix
 "------------------------------------------------------------------------------
@@ -228,15 +228,78 @@ if executable('xmllint')
 endif
 
 if executable('eslint')
-    augroup eslint_config
-    autocmd!
-    autocmd FileType javascript setlocal shortmess+=a
-    autocmd FileType javascript setlocal makeprg=eslint\ --fix\ --format\ compact\ %
-    autocmd FileType javascript setlocal errorformat=%f:\ line\ %l\\,\ col\ %c\\,\ %m,%-G%.%#
-augroup END
 
-    autocmd BufWritePost *.js,*.jsx,*.ts,*.tsx make! | redraw!
-    command EslintFixAll execute '!eslint\--fix\ --format\ compact\ %' | edit!
+    function! ESLintMake() abort
+        let output = system('eslint --format=unix ' . expand('%') . ' 2>/dev/null')
+
+        if v:shell_error == 2
+            echohl WarningMsg
+            echom 'ESLint runtime error - no diagnostics loaded'
+            echohl None
+            return
+        endif
+
+        cgetexpr output
+        copen
+    endfunction
+
+    function! ESLintFormat(lnum, count) abort
+        let lines = getline(a:lnum, a:lnum + a:count - 1)
+        let input = join(lines, "\n")
+
+        let result = system('eslint --fix-dry-run --stdin --stdin-filename ' . expand('%') . ' 2>/dev/null', input)
+
+        if v:shell_error == 2
+            echohl WarningMsg
+            echom 'ESLint runtime error - falling back to vim internal formatting'
+            echohl None
+            return 1  " tell vim to fall back to internal formatting
+        endif
+
+        let formatted = split(result, "\n", 1)
+        call deletebufline('%', a:lnum, a:lnum + a:count - 1)
+        call appendbufline('%', a:lnum - 1, formatted)
+        return 0
+    endfunction
+
+    function! ESLintFix() abort
+        let filepath = expand('%')
+
+        " Save buffer to disk first so eslint --fix can read it
+        write
+
+        " Run eslint --fix, capture any output (warnings/errors)
+        let output = system('eslint --fix --format=unix ' . filepath . ' 2>/dev/null')
+
+        if v:shell_error == 2
+            echohl WarningMsg
+            echom 'ESLint runtime error — buffer unchanged'
+            echohl None
+            return
+        endif
+
+        " Reload buffer to reflect changes eslint --fix wrote to disk
+        edit!
+
+        " Populate quickfix with any remaining lint messages
+        if empty(output)
+            cclose
+        else
+            cgetexpr output
+            copen
+        endif
+    endfunction
+
+    augroup javascript_lint
+        autocmd!
+        autocmd FileType javascript setlocal equalprg=
+        autocmd FileType javascript setlocal formatexpr=ESLintFormat(v:lnum,v:count)
+        autocmd FileType javascript setlocal errorformat=%f:%l:%c:\ %m
+        autocmd FileType javascript nnoremap <buffer> <silent> <F5> :call ESLintMake()<CR>
+    augroup END
+
+    command! ESLintFix call ESLintFix()
+
 endif
 
 function! FixIndent()
@@ -374,6 +437,57 @@ augroup END
 nnoremap <leader>lc <Cmd>call ShowStdListChars()<CR>
 nnoremap <leader>LC <Cmd>call ShowAllListChars()<CR>
 nnoremap <leader>ln <Cmd>call HideListChars()<CR>
+
+"------------------------------------------------------------------------------
+" Toggle Comments (emulate mini.comment plugin)
+"------------------------------------------------------------------------------
+
+function! ToggleComment() range
+    if empty(&commentstring)
+        echoerr "ToggleComment: 'commentstring' is empty for this filetype"
+        return
+    endif
+    if &commentstring !~# '%s'
+        echoerr "ToggleComment: 'commentstring' has no %s placeholder: " .. &commentstring
+        return
+    endif
+    if a:firstline == 0 || a:lastline == 0
+        echoerr "ToggleComment: empty range"
+        return
+    endif
+
+    let l:before = escape(matchstr(&commentstring, '^.\{-}\ze%s'), '/\^$.*~[]')
+    let l:after  = escape(matchstr(&commentstring, '%s\zs.*$'),    '/\^$.*~[]')
+    let l:pattern = '^' .. l:before .. '.\{-}' .. l:after .. '$'
+
+    " Decide intent from the first line in the range
+    let l:first_line = getline(a:firstline)
+    let l:should_uncomment = l:first_line =~# l:pattern
+
+    for lnum in range(a:firstline, a:lastline)
+        let line = getline(lnum)
+        if l:should_uncomment
+            if line =~# l:pattern
+                let inner = matchstr(line, '^' .. l:before .. '\zs.\{-}\ze' .. l:after .. '$')
+                call setline(lnum, inner)
+            else
+                echom "ToggleComment: line " .. lnum .. " does not match commentstring, skipping"
+            endif
+        else
+            call setline(lnum, printf(&commentstring, line))
+        endif
+    endfor
+endfunction
+
+function! s:ToggleCommentOpfunc(type)
+    execute "'[,']call ToggleComment()"
+endfunction
+
+" Normal mode: takes a motion/textobject (e.g. gcap, gcip, gc3j)
+nnoremap <silent> gc :set operatorfunc=<SID>ToggleCommentOpfunc<CR>g@
+
+" Visual mode: operates over the visual selection
+xnoremap <silent> gc :call ToggleComment()<CR>
 
 "------------------------------------------------------------------------------
 " Misc
