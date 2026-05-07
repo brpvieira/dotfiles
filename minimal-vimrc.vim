@@ -75,6 +75,10 @@ set colorcolumn=80
 " line wrap is evil
 set nowrap
 
+" folding
+set foldlevel=5
+set foldmethod=indent
+
 "------------------------------------------------------------------------------
 " Indentation
 "------------------------------------------------------------------------------
