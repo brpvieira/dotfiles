@@ -229,9 +229,98 @@ augroup remove_whitespace
 augroup END
 
 "------------------------------------------------------------------------------
+" Register editor
+"------------------------------------------------------------------------------
+
+let g:regEd_BufferName = "__RegEditor__"
+
+function! s:RegEdOpen(reg, new_win)
+    let l:content = getreg(a:reg, 1, 1)
+    if empty(l:content)
+        echo 'Register ' . a:reg . ' is empty, nothing to edit.'
+        return
+    endif
+
+    let split_win = a:new_win
+
+    " If the current buffer is modified then open the scratch buffer in a new
+    " window
+    if !split_win && &modified
+        let split_win = 1
+    endif
+
+    " Check whether the buffer is already created
+    let bufnum = bufnr(g:regEd_BufferName)
+    if bufnum == -1
+        " open a new scratch buffer
+        if split_win
+            exe "new " . g:regEd_BufferName
+        else
+            exe "edit " . g:regEd_BufferName
+        endif
+    else
+        " Buffer is already created. Check whether it is open
+        " in one of the windows
+        let winnum = bufwinnr(bufnum)
+        if winnum != -1
+            " Jump to the window which has the scratch buffer if we are not
+            " already in that window
+            if winnr() != winnum
+                exe winnum . "wincmd w"
+            endif
+        else
+            " Create a new buffer
+            if split_win
+                exe "split +buffer" . bufnum
+            else
+                exe "buffer " . bufnum
+            endif
+        endif
+    endif
+    let bufnum = bufnr(g:regEd_BufferName)
+    if getbufvar(bufnum, "&mod")
+        echo "Buffer is modified, showing previous value"
+        return
+    endif
+    let g:regEd_CurrentReg = a:reg
+    call deletebufline(bufnum, 1, '$')
+    call setbufline(bufnum, 1, l:content)
+endfunction
+
+function! s:RegEdConfigBuffer()
+    setlocal buftype=nofile
+    setlocal bufhidden=hide
+    setlocal noswapfile
+    setlocal buflisted
+endfunction
+
+function! s:RegEdSetRegister()
+    let bufnum = bufnr(g:regEd_BufferName)
+    let l:buffer_lines = getbufline(bufnum, 1, '$')
+    let l:full_content = join(l:buffer_lines, "\n")
+	let l:reg_mode = getregtype(g:regEd_CurrentReg)
+    call setreg(g:regEd_CurrentReg, l:full_content, l:reg_mode)
+endfunction
+
+augroup RegEdit
+    autocmd!
+    autocmd BufLeave __RegEditor__  call s:RegEdSetRegister()
+    autocmd BufNewFile __RegEditor__ call s:RegEdConfigBuffer()
+augroup END
+
+command! -nargs=1 RegEdit call s:RegEdOpen(<args>, 0)
+command! -nargs=1 RegEditSplit call s:RegEdOpen(<args>, 1)
+
+"------------------------------------------------------------------------------
 " Misc
 "------------------------------------------------------------------------------
 
 " save file as root
 command W execute 'silent w !sudo tee % > /dev/null' | edit!
+
+" handy vimrc manipulation
+nnoremap <leader>ve :edit $MYVIMRC<CR>
+nnoremap <leader>vs :source $MYVIMRC<CR>
+
+" set colorscheme
 colorscheme desert
