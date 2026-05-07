@@ -2,6 +2,9 @@
 " QOL defaults
 "------------------------------------------------------------------------------
 
+" set leader to space
+let mapleader = " "
+
 set path+=**
 
 " Nice menu when typing `:find *.py`
@@ -27,21 +30,6 @@ set backspace=indent,eol,start
 set splitbelow
 set splitright
 
-
-" copy indent from current line when starting a new line
-" see http://vim.wikia.com/wiki/Restoring_indent_after_typing_hash
-" for a discussion of smartindent, cindent, autoindent
-set smartindent
-" see http://vimcasts.org/episodes/tabs-and-spaces/ for a great
-" overview of tab options
-" Width for tab characters present in a file being edited
-set tabstop=4
-" number of spaces to use for each step of (auto)indent. For <, >, etc.
-set shiftwidth=4
-" number of spaces that a <Tab> counts for when typing TAB, backspace, etc.
-set softtabstop=4
-" expand TAB keystroke to spaces.
-set expandtab
 
 " Minimal number of screen lines to keep above and below the cursor.
 set scrolloff=10
@@ -86,8 +74,29 @@ set colorcolumn=80
 
 " line wrap is evil
 set nowrap
-" set leader to space
-let mapleader = " "
+
+"------------------------------------------------------------------------------
+" Indentation
+"------------------------------------------------------------------------------
+
+" Enable filetype detection, plugins, and indent scripts
+filetype plugin indent on
+
+set autoindent
+" see http://vimcasts.org/episodes/tabs-and-spaces/ for a great
+" overview of tab options
+" Width for tab characters present in a file being edited
+set tabstop=4
+" number of spaces to use for each step of (auto)indent. For <, >, etc.
+set shiftwidth=4
+" number of spaces that a <Tab> counts for when typing TAB, backspace, etc.
+set softtabstop=4
+" expand TAB keystroke to spaces.
+set expandtab
+
+" prevent conflicts
+set nosmartindent
+set nocindent
 
 "------------------------------------------------------------------------------
 " Basic remaps
@@ -111,6 +120,18 @@ nnoremap <C-H> <C-W><C-H>
 " Move visual selection
 vnoremap J :m '>+1<CR>gv=gv
 vnoremap K :m '<-2<CR>gv=gv
+
+" Append next line onto current preserve cursor position
+nnoremap J mzJ`z
+
+" Better search hit navigation
+nnoremap n nzzzv
+nnoremap N Nzzzv
+
+
+" 1/2 Page Up / Down
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
 
 " greatest remap ever: paste over selection, retain last edit register
 vnoremap <leader>p "_dP
@@ -141,7 +162,7 @@ function! ToggleQuickFix()
     endif
 endfunction
 
-nnoremap <silent> <leader>q :call ToggleQuickFix()<CR>
+nnoremap <silent> <leader>q <Cmd>call ToggleQuickFix()<CR>
 
 " Go to next/previous quickfix item
 nnoremap qj :cnext<CR>zz
@@ -224,11 +245,21 @@ function! FixIndent()
 " Command to call FixIndent
 command! FI call FixIndent()
 
+function! TrimTrailingSpaces()
+    %s/\s\+$//e
+endfunction
+
+function! RemoveEmptyTrailingLines()
+    %s/\($\n\s*\)\+\%$//e
+endfunction
+
 augroup remove_whitespace
     autocmd!
-    autocmd BufWritePre * %s/\s\+$//e
-    autocmd BufWritePre * %s/\($\n\s*\)\+\%$//e
+    autocmd BufWritePre * call TrimTrailingSpaces()
+    autocmd BufWritePre * call RemoveEmptyTrailingLines()
 augroup END
+
+nnoremap <leader>ws <Cmd>call TrimTrailingSpaces() <Bar> call RemoveEmptyTrailingLines()<CR>
 
 "------------------------------------------------------------------------------
 " Register editor
@@ -316,6 +347,7 @@ command! -nargs=1 RegEditSplit call s:RegEdOpen(<args>, 1)
 "------------------------------------------------------------------------------
 " ListChars
 "------------------------------------------------------------------------------
+
 function! ShowStdListChars()
     setlocal listchars=tab:▸\ ,trail:·,extends:→
     setlocal list
@@ -335,9 +367,10 @@ augroup ListChars
     autocmd BufEnter * if &buftype == '' | call ShowStdListChars() | endif
 augroup END
 
-nnoremap <leader>lc :call ShowStdListChars()<CR>
-nnoremap <leader>LC :call ShowAllListChars()<CR>
-nnoremap <leader>ln :call HideListChars()<CR>
+nnoremap <leader>lc <Cmd>call ShowStdListChars()<CR>
+nnoremap <leader>LC <Cmd>call ShowAllListChars()<CR>
+nnoremap <leader>ln <Cmd>call HideListChars()<CR>
+
 "------------------------------------------------------------------------------
 " Misc
 "------------------------------------------------------------------------------
