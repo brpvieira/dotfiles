@@ -228,6 +228,19 @@ if executable('xmllint')
 endif
 
 if executable('eslint')
+    function! s:ESLintPopulateQuickfix(output)
+        " Filter to only lines matching file:line:col: message
+        let pattern = '^.\+:\d\+:\d\+:.\+$'
+        let filtered = join(filter(split(a:output, "\n"), 'v:val =~ pattern'), "\n")
+
+        " Populate quickfix with any remaining lint messages
+        if empty(filtered)
+            cclose
+        else
+            cgetexpr filtered
+            copen
+        endif
+    endfunction
 
     function! ESLintMake() abort
         let output = system('eslint --format=unix ' . expand('%') . ' 2>/dev/null')
@@ -238,9 +251,7 @@ if executable('eslint')
             echohl None
             return
         endif
-
-        cgetexpr output
-        copen
+        call s:ESLintPopulateQuickfix(output)
     endfunction
 
     function! ESLintFormat(lnum, count) abort
@@ -280,14 +291,7 @@ if executable('eslint')
 
         " Reload buffer to reflect changes eslint --fix wrote to disk
         edit!
-
-        " Populate quickfix with any remaining lint messages
-        if empty(output)
-            cclose
-        else
-            cgetexpr output
-            copen
-        endif
+        call s:ESLintPopulateQuickfix(output)
     endfunction
 
     augroup javascript_lint
