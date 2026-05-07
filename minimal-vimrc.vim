@@ -84,6 +84,8 @@ set noswapfile
 
 set colorcolumn=80
 
+" line wrap is evil
+set nowrap
 " set leader to space
 let mapleader = " "
 
@@ -197,14 +199,14 @@ if executable('jq')
 endif
 
 if executable('xmllint')
-    autocmd FileType xml silent! %!xmllint --format --recover - 2>/dev/null
+    autocmd FileType xml setlocal equalprg=xmllint\ --recover\ --format\ -
 endif
 
 if executable('eslint')
     augroup eslint_config
     autocmd!
     autocmd FileType javascript setlocal shortmess+=a
-    autocmd FileType javascript setlocal makeprg=eslint\--fix\ --format\ compact\ %
+    autocmd FileType javascript setlocal makeprg=eslint\ --fix\ --format\ compact\ %
     autocmd FileType javascript setlocal errorformat=%f:\ line\ %l\\,\ col\ %c\\,\ %m,%-G%.%#
 augroup END
 
@@ -311,6 +313,31 @@ augroup END
 command! -nargs=1 RegEdit call s:RegEdOpen(<args>, 0)
 command! -nargs=1 RegEditSplit call s:RegEdOpen(<args>, 1)
 
+"------------------------------------------------------------------------------
+" ListChars
+"------------------------------------------------------------------------------
+function! ShowStdListChars()
+    setlocal listchars=tab:▸\ ,trail:·,extends:→
+    setlocal list
+endfunction
+
+function! ShowAllListChars()
+    setlocal listchars=tab:▸\ ,trail:·,extends:→,precedes:←,nbsp:×,eol:↲
+    setlocal list
+endfunction
+
+function! HideListChars()
+    setlocal nolist
+endfunction
+
+augroup ListChars
+    autocmd!
+    autocmd BufEnter * if &buftype == '' | call ShowStdListChars() | endif
+augroup END
+
+nnoremap <leader>lc :call ShowStdListChars()<CR>
+nnoremap <leader>LC :call ShowAllListChars()<CR>
+nnoremap <leader>ln :call HideListChars()<CR>
 "------------------------------------------------------------------------------
 " Misc
 "------------------------------------------------------------------------------
