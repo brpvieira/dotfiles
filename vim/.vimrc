@@ -94,6 +94,8 @@ set nowrap
 set foldlevel=5
 set foldmethod=indent
 
+
+
 "------------------------------------------------------------------------------
 " Statusline
 "------------------------------------------------------------------------------
@@ -130,6 +132,53 @@ function! FileSize()
     endif
 endfunction
 
+let g:git_branch = ''
+let g:git_diff = ''
+
+function! UpdateGitInfo()
+    if !executable('git')
+        return
+    endif
+
+    let l:dir = shellescape(expand('%:p:h'))
+    let l:branch = trim(system('git -C ' . l:dir . ' rev-parse --abbrev-ref HEAD 2>/dev/null'))
+    if l:branch =~# '^\(fatal\|error\)'
+        let g:git_branch = ''
+        let g:git_diff = ''
+        return
+    endif
+
+    let g:git_branch = '⎇ ' . l:branch
+
+    let l:diff = trim(system('git -C ' . l:dir . ' diff --numstat HEAD 2>/dev/null'))
+    if l:diff == ''
+        let g:git_diff = ''
+        return
+    endif
+
+    let l:added = 0
+    let l:removed = 0
+    for l:line in split(l:diff, '\n')
+        let l:parts = split(l:line, '\t')
+        if len(l:parts) >= 2
+            let l:added   += str2nr(l:parts[0])
+            let l:removed += str2nr(l:parts[1])
+        endif
+    endfor
+
+    if l:added   == 0 | let l:added = '-' | endif
+    if l:removed   == 0 | let l:removed = '-' | endif
+
+    let g:git_diff = '▲' . l:added . ' ▼' . l:removed . ' | '
+endfunction
+
+augroup GitStatusLine
+  autocmd!
+  autocmd BufEnter,BufWritePost,FocusGained * call UpdateGitInfo()
+augroup END
+
+call UpdateGitInfo()
+
 let s:StatusLine_Mode      = 'DiffDelete'
 let s:StatusLine_Primary = 'Folded'
 let s:StatusLine_Secondary   = 'EndOfBuffer'
@@ -144,7 +193,9 @@ function! BuildStatusLine()
     \ . '%#' . s:StatusLine_Secondary . '#'
     \ . ' %y %{(&fenc!=""?&fenc:&enc)}[%{&ff}] %{FileSize()} '
     \ . '%#' . s:StatusLine_Mode      . '#'
-    \ . ' %l:%c '
+    \ . ' %{git_branch}'
+    \ . ' %{git_diff}'
+    \ . 'L%l:C%c '
 endfunction
 
 augroup StatusLineActive
@@ -152,6 +203,8 @@ augroup StatusLineActive
   autocmd WinEnter * call BuildStatusLine()
   autocmd WinLeave * setlocal statusline=%#NonText#%f
 augroup END
+
+call BuildStatusLine()
 
 "------------------------------------------------------------------------------
 " Indentation
