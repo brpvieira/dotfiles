@@ -2,6 +2,9 @@
 " QOL defaults
 "------------------------------------------------------------------------------
 
+" get rid of Vi compatibility mode. SET FIRST!
+set nocompatible
+
 " set leader to space
 let mapleader = " "
 
@@ -10,6 +13,7 @@ set path+=**
 " Nice menu when typing `:find *.py`
 set wildmode=longest,list,full
 set wildmenu
+
 " Ignore files
 set wildignore+=*.pyc
 set wildignore+=*_build/*
@@ -37,6 +41,9 @@ set scrolloff=10
 " Show line numbers relative to the cursor, instead of absolute
 set number relativenumber
 
+" make the number gutter 5 characters wide
+set numberwidth=5
+
 " show the line and column number of the cursor position
 set ruler
 
@@ -45,12 +52,16 @@ set gdefault
 
 " show search results as you type thate search pattern
 set incsearch
+
 " when a bracket is inserted, briefly jump to the matching one
 set showmatch
+
 " when there is a previous search pattern, highlight all its matches.
 set hlsearch
+
 " ignore case when searching with a pattern in all lower case
 set ignorecase
+
 " case sensitive search when upper case is used in the pattern
 set smartcase
 
@@ -70,7 +81,11 @@ set nobackup
 set nowb
 set noswapfile
 
-set colorcolumn=80
+augroup ColorColumnActive
+  autocmd!
+  autocmd WinEnter * if &buftype == '' | setlocal colorcolumn=80 | endif
+  autocmd WinLeave * setlocal colorcolumn=
+augroup END
 
 " line wrap is evil
 set nowrap
@@ -78,6 +93,65 @@ set nowrap
 " folding
 set foldlevel=5
 set foldmethod=indent
+
+"------------------------------------------------------------------------------
+" Statusline
+"------------------------------------------------------------------------------
+
+" last window always has a statusline
+
+set laststatus=2
+
+function! StatuslineMode()
+    let l:mode = mode()
+    return get({
+        \ 'n': 'Normal',
+        \ 'i': 'Insert',
+        \ 'v': 'Visual',
+        \ 'V': 'V-Line',
+        \ "\<C-v>": 'V-Block',
+        \ 'R': 'Replace',
+        \ 's': 'Select',
+        \ 't': 'Terminal',
+        \ 'c': 'Command',
+        \}, l:mode, l:mode)
+endfunction
+
+function! FileSize()
+    let l:bytes = getfsize(expand('%'))
+    if l:bytes < 0
+        return ''
+    elseif l:bytes < 1024
+        return l:bytes . 'B'
+    elseif l:bytes < 1048576
+        return printf('%.1fK', l:bytes / 1024.0)
+    else
+        return printf('%.1fM', l:bytes / 1048576.0)
+    endif
+endfunction
+
+let s:StatusLine_Mode      = 'DiffDelete'
+let s:StatusLine_Primary = 'Folded'
+let s:StatusLine_Secondary   = 'EndOfBuffer'
+
+function! BuildStatusLine()
+  let &statusline = ''
+    \ . '%#' . s:StatusLine_Mode      . '#'
+    \ . ' %{StatuslineMode()} '
+    \ . '%#' . s:StatusLine_Primary   . '#'
+    \ . ' %f %m %r '
+    \ . '%='
+    \ . '%#' . s:StatusLine_Secondary . '#'
+    \ . ' %y %{(&fenc!=""?&fenc:&enc)}[%{&ff}] %{FileSize()} '
+    \ . '%#' . s:StatusLine_Mode      . '#'
+    \ . ' %l:%c '
+endfunction
+
+augroup StatusLineActive
+  autocmd!
+  autocmd WinEnter * call BuildStatusLine()
+  autocmd WinLeave * setlocal statusline=%#NonText#%f
+augroup END
 
 "------------------------------------------------------------------------------
 " Indentation
@@ -151,6 +225,7 @@ vnoremap <leader>d "_d
 
 " Run make with F5
 nnoremap <silent> <F5> :silent make! \| redraw!<CR>
+
 "------------------------------------------------------------------------------
 " Better QuickFix
 "------------------------------------------------------------------------------
@@ -493,9 +568,74 @@ nnoremap <silent> gc :set operatorfunc=<SID>ToggleCommentOpfunc<CR>g@
 " Visual mode: operates over the visual selection
 xnoremap <silent> gc :call ToggleComment()<CR>
 
+
+"------------------------------------------------------------------------------
+" vimscript dev utilities
+"------------------------------------------------------------------------------
+
+function! ShowHighlightGroups()
+  " Collect all highlight groups
+  let l:groups = [
+    \ 'ColorColumn', 'Conceal', 'CurSearch', 'Cursor', 'CursorColumn',
+    \ 'CursorIM', 'CursorLine', 'CursorLineFold', 'CursorLineNr',
+    \ 'CursorLineSign', 'DiffAdd', 'DiffChange', 'DiffDelete', 'DiffText',
+    \ 'Directory', 'EndOfBuffer', 'ErrorMsg', 'FoldColumn', 'Folded',
+    \ 'IncSearch', 'LineNr', 'LineNrAbove', 'LineNrBelow', 'MatchParen',
+    \ 'ModeMsg', 'MoreMsg', 'MsgArea', 'MsgSeparator', 'NonText',
+    \ 'Normal', 'NormalFloat', 'NormalNC', 'Pmenu', 'PmenuExtra',
+    \ 'PmenuExtraSel', 'PmenuKind', 'PmenuKindSel', 'PmenuSbar',
+    \ 'PmenuSel', 'PmenuThumb', 'Question', 'QuickFixLine', 'Search',
+    \ 'SignColumn', 'SpecialKey', 'SpellBad', 'SpellCap', 'SpellLocal',
+    \ 'SpellRare', 'StatusLine', 'StatusLineNC', 'StatusLineTerm',
+    \ 'StatusLineTermNC', 'TabLine', 'TabLineFill', 'TabLineSel',
+    \ 'Terminal', 'Title', 'Visual', 'VisualNOS', 'WarningMsg',
+    \ 'WildMenu', 'WinBar', 'WinBarNC', 'WinSeparator',
+  \ ]
+
+  " Build lines: each line is padded label + sample text
+  let l:lines = ['  Highlight Groups', '  ' . repeat('─', 50), '']
+  for l:group in l:groups
+    call add(l:lines, printf('  %-30s %s', '#' . l:group . '#', 'Sample Text'))
+  endfor
+
+  " Open a new split with a scratch buffer
+  botright 20new
+  setlocal buftype=nofile bufhidden=wipe noswapfile nomodifiable readonly
+  setlocal filetype=vim nonumber norelativenumber
+
+  " Temporarily allow modification to populate the buffer
+  setlocal modifiable noreadonly
+  call setline(1, l:lines)
+  setlocal nomodifiable readonly
+
+  " Apply highlight groups to each sample line
+  " Lines start at index 4 (after header, divider, blank)
+  let l:offset = 4
+  for l:i in range(len(l:groups))
+    let l:group = l:groups[l:i]
+    let l:linenum = l:offset + l:i
+    " Highlight just the sample text portion (col 33 onward)
+    if hlexists(l:group)
+      call matchaddpos(l:group, [[l:linenum, 33, 11]])
+    endif
+  endfor
+
+  " Close with q
+  nnoremap <buffer> q :bwipe!<CR>
+  echo "Press q to close"
+endfunction
+
+command! HighlightGroups call ShowHighlightGroups()
+
 "------------------------------------------------------------------------------
 " Misc
 "------------------------------------------------------------------------------
+
+" In Makefiles DO NOT use spaces instead of tabs
+autocmd FileType make setlocal noexpandtab
+
+" In Ruby files, use 2 spaces instead of 4 for tabs
+autocmd FileType ruby setlocal sw=2 ts=2 sts=2
 
 " save file as root
 command W execute 'silent w !sudo tee % > /dev/null' | edit!
@@ -503,6 +643,9 @@ command W execute 'silent w !sudo tee % > /dev/null' | edit!
 " handy vimrc manipulation
 nnoremap <leader>ve :edit $MYVIMRC<CR>
 nnoremap <leader>vs :source $MYVIMRC<CR>
+
+" enable 256-color mode.
+set t_Co=256
 
 " set colorscheme
 colorscheme desert
