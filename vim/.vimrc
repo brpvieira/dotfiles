@@ -699,6 +699,8 @@ nnoremap <leader>vs :source $MYVIMRC<CR>
 
 " enable 256-color mode.
 set t_Co=256
+set termguicolors
+set background=dark
 
 " set colorscheme
 colorscheme desert
