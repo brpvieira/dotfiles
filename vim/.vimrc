@@ -679,6 +679,96 @@ function! ShowHighlightGroups()
 endfunction
 
 command! HighlightGroups call ShowHighlightGroups()
+function! ShowThemeColors()
+    " Gather all highlight groups and their definitions
+    let l:lines = []
+    let l:highlights = []
+
+    redir => l:hl_output
+    silent highlight
+    redir END
+
+    " Parse the output - highlight can wrap long lines with leading spaces
+    let l:current = ''
+    for l:line in split(l:hl_output, '\n')
+        if l:line =~# '^\s\+' && l:current != ''
+            " continuation of previous group
+            let l:current .= ' ' . trim(l:line)
+        else
+            if l:current != ''
+                call add(l:highlights, l:current)
+            endif
+            let l:current = trim(l:line)
+        endif
+    endfor
+    if l:current != ''
+        call add(l:highlights, l:current)
+    endif
+
+    " Build display lines
+    let l:header = printf('  %-30s %-15s %-15s %-15s %-15s %s',
+                \ 'Group', 'guifg', 'guibg', 'ctermfg', 'ctermbg', 'Attrs')
+    call add(l:lines, '')
+    call add(l:lines, '  Theme: ' . get(g:, 'colors_name', 'unknown'))
+    call add(l:lines, '  ' . repeat('─', 100))
+    call add(l:lines, l:header)
+    call add(l:lines, '  ' . repeat('─', 100))
+
+    let l:groups = []
+    for l:hl in l:highlights
+        " Skip cleared/linked groups with no colour info
+        if l:hl =~# 'cleared' || l:hl =~# 'links to'
+            continue
+        endif
+
+        let l:group   = matchstr(l:hl, '^\S\+')
+        let l:guifg   = matchstr(l:hl, 'guifg=\zs\S\+')
+        let l:guibg   = matchstr(l:hl, 'guibg=\zs\S\+')
+        let l:ctermfg = matchstr(l:hl, 'ctermfg=\zs\S\+')
+        let l:ctermbg = matchstr(l:hl, 'ctermbg=\zs\S\+')
+        let l:attrs   = matchstr(l:hl, 'gui=\zs\S\+')
+        if l:attrs == '' | let l:attrs = matchstr(l:hl, 'cterm=\zs\S\+') | endif
+
+        if l:group == '' | continue | endif
+
+        call add(l:groups, l:group)
+        call add(l:lines, printf('  %-30s %-15s %-15s %-15s %-15s %s',
+                    \ l:group,
+                    \ (l:guifg   != '' ? l:guifg   : '─'),
+                    \ (l:guibg   != '' ? l:guibg   : '─'),
+                    \ (l:ctermfg != '' ? l:ctermfg : '─'),
+                    \ (l:ctermbg != '' ? l:ctermbg : '─'),
+                    \ (l:attrs   != '' ? l:attrs   : '─')))
+    endfor
+
+    call add(l:lines, '')
+
+    " Open split
+    botright 20new
+    setlocal buftype=nofile bufhidden=wipe noswapfile
+    setlocal nonumber norelativenumber nowrap
+
+    setlocal modifiable noreadonly
+    call setline(1, l:lines)
+    setlocal nomodifiable readonly
+
+    " Apply each group's highlight to its own row's sample text
+    " Data rows start at line 6 (blank, title, rule, header, rule, data...)
+    let l:offset = 6
+    for l:i in range(len(l:groups))
+        let l:group = l:groups[l:i]
+        let l:linenum = l:offset + l:i
+        if hlexists(l:group)
+            " Highlight the group name itself (col 3, length 30)
+            call matchaddpos(l:group, [[l:linenum, 3, 30]])
+        endif
+    endfor
+
+    nnoremap <buffer> q :bwipe!<CR>
+    echo "Press q to close"
+endfunction
+
+command! ThemeColors call ShowThemeColors()
 
 "------------------------------------------------------------------------------
 " Misc
