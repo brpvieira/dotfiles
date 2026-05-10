@@ -12,9 +12,10 @@ curl -fsSL https://raw.githubusercontent.com/brpvieira/dotfiles/master/setup/ins
 
 1. **Clones the repo** into `~/dotfiles` (falls back to zip download if git is unavailable)
 2. **Sets up XDG base directories** (`~/.config`, `~/.local/share`, `~/.local/bin`, etc.) and writes `~/.config/xdg-vars` for shell sourcing
-3. **Installs tools** — skips anything already present, supports Homebrew (macOS) and apt/apt-get (Debian/Ubuntu)
-4. **Installs terminfo** — compiles a patched `xterm-256color` entry via `tic`, backing up any existing user entry first
-5. **Stows configs** — symlinks each package into `$HOME` via xstow, backing up conflicting files to `~/.dotfiles-backup/`
+3. **Patches the shell rc** — appends a source line for `xdg-vars` to `~/.zshrc` or `~/.bashrc`, detected from the user's login shell (not `$SHELL`)
+4. **Installs tools** — skips anything already present, supports Homebrew (macOS) and apt/apt-get (Debian/Ubuntu)
+5. **Installs terminfo** — compiles a patched `xterm-256color` entry via `tic`, backing up any existing user entry first
+6. **Stows configs** — symlinks each package into `$HOME` via xstow, backing up conflicting files to `~/.dotfiles-backup/`
 
 ## Tools installed
 
