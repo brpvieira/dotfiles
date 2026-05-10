@@ -188,7 +188,45 @@ save_xdg_user_dirs() {
     printf '[xdg]   [ -f "%s" ] && source "%s"\n' "$out" "$out"
 }
 
+# Appends a source line for $XDG_CONFIG_HOME/xdg-vars to the user's shell rc
+# file (.zshrc or .bashrc), detected via $SHELL. Idempotent: skips if the
+# line is already present.
+configure_shell_rc() {
+    # Derive the login shell from the passwd database rather than $SHELL, which
+    # reflects the shell running this script (bash), not the user's actual shell.
+    local login_shell
+    if command -v dscl &>/dev/null; then
+        # macOS: Directory Services is authoritative; /etc/passwd is not reliable.
+        login_shell="$(dscl . -read "/Users/$(id -un)" UserShell 2>/dev/null | awk '{print $2}')"
+    elif command -v getent &>/dev/null; then
+        # Linux with LDAP/NIS support.
+        login_shell="$(getent passwd "$(id -un)" | cut -d: -f7)"
+    else
+        login_shell="$(grep "^$(id -un):" /etc/passwd | cut -d: -f7)"
+    fi
+
+    local rc
+    case "$login_shell" in
+        */zsh)  rc="$HOME/.zshrc"  ;;
+        */bash) rc="$HOME/.bashrc" ;;
+        *)
+            printf '[xdg] WARNING: login shell "%s" not recognised; add to your rc file manually:\n' "$login_shell" >&2
+            printf '[xdg]   [ -f "${XDG_CONFIG_HOME:-$HOME/.config}/xdg-vars" ] && source "${XDG_CONFIG_HOME:-$HOME/.config}/xdg-vars"\n' >&2
+            return 0
+            ;;
+    esac
+
+    if grep -qF 'xdg-vars' "$rc" 2>/dev/null; then
+        printf '[xdg] xdg-vars source line already present in %s\n' "$rc"
+        return 0
+    fi
+
+    printf '\n# XDG base directory vars — managed by dotfiles/setup/xdg_user_dirs.sh\n' >> "$rc"
+    printf '[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/xdg-vars" ] && source "${XDG_CONFIG_HOME:-$HOME/.config}/xdg-vars"\n' >> "$rc"
+    printf '[xdg] added xdg-vars source line to %s\n' "$rc"
+}
+
 # Run immediately when executed as a script (not sourced).
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    setup_xdg_user_dirs && save_xdg_user_dirs
+    setup_xdg_user_dirs && save_xdg_user_dirs && configure_shell_rc
 fi

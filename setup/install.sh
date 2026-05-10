@@ -72,6 +72,7 @@ pushd $DOTFILES > /dev/null 2>&1
 
     source setup/xdg_user_dirs.sh
     setup_xdg_user_dirs && save_xdg_user_dirs
+    configure_shell_rc
 
     source setup/install_tools.sh
     check_eslint
