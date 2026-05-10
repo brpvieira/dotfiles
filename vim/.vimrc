@@ -234,7 +234,10 @@ set nocindent
 "------------------------------------------------------------------------------
 
 " clear search highlight
-nnoremap <silent> <Esc> :nohlsearch<CR><Esc>
+augroup SafeEscMap
+  autocmd!
+  autocmd VimEnter * nnoremap <silent> <Esc> :nohlsearch<CR><Esc>
+augroup END
 
 " Disable arrows in Normal, Visual, and Operator-pending modes
 noremap <Up> <Nop>
