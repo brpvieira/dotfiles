@@ -42,6 +42,30 @@ get_dotfiles() {
     echo "Dotfiles ready at ${dest}."
 }
 
+install_terminfo() {
+    if ! command -v tic &>/dev/null; then
+        echo "Warning: tic not found; skipping terminfo installation." >&2
+        return 0
+    fi
+
+    local src="$DOTFILES/terminfo/alacritty.terminfo"
+    if [[ ! -f "$src" ]]; then
+        echo "Warning: ${src} not found; skipping terminfo installation." >&2
+        return 0
+    fi
+
+    local existing="$HOME/.terminfo/x/xterm-256color"
+    if [[ -f "$existing" ]]; then
+        local bak="${existing}.bak.$(date +%Y%m%d_%H%M%S)"
+        cp "$existing" "$bak"
+        echo "terminfo backup: ${existing} → ${bak}"
+    fi
+
+    echo "Installing terminfo from ${src}..."
+    tic -x "$src"
+    echo "terminfo installed."
+}
+
 get_dotfiles
 
 pushd $DOTFILES > /dev/null 2>&1
@@ -56,6 +80,10 @@ pushd $DOTFILES > /dev/null 2>&1
     check_xmllint
     check_tmux
     check_editor
+    install_terminfo
     install_xstow
+
+    source setup/stow_packages.sh
+    stow_packages
 
 popd > /dev/null 2>&1
