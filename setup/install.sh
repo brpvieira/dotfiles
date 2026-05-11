@@ -6,6 +6,7 @@ DOTFILES="$HOME/dotfiles"
 get_dotfiles() {
     local dest=$DOTFILES
     local repo_url="https://github.com/brpvieira/dotfiles"
+    local clone_url="git@github.com:brpvieira/dotfiles.git"
     local zip_url="${repo_url}/archive/refs/heads/master.zip"
 
     if [ -d "$dest" ]; then
@@ -15,7 +16,7 @@ get_dotfiles() {
 
     if command -v git &>/dev/null; then
         echo "git detected. Cloning dotfiles into ${dest}..."
-        git clone "$repo_url" "$dest"
+        git clone "$clone_url" "$dest"
     else
         echo "git not found. Downloading dotfiles archive..."
         local tmp_zip
