@@ -5,6 +5,8 @@
 " get rid of Vi compatibility mode. SET FIRST!
 set nocompatible
 
+" mute annoying beeps
+set visualbell
 " set leader to space
 let mapleader = " "
 
