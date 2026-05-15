@@ -85,6 +85,10 @@ pushd $DOTFILES > /dev/null 2>&1
     install_terminfo
     install_xstow
 
+    source setup/python_venv.sh
+    setup_python_venv
+    configure_venv_rc
+
     source setup/stow_packages.sh
     stow_packages
 

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+
 #
 # Sets up XDG base directories per the XDG Base Directory Specification:
 # https://specifications.freedesktop.org/basedir/latest/#variables
@@ -195,15 +198,7 @@ configure_shell_rc() {
     # Derive the login shell from the passwd database rather than $SHELL, which
     # reflects the shell running this script (bash), not the user's actual shell.
     local login_shell
-    if command -v dscl &>/dev/null; then
-        # macOS: Directory Services is authoritative; /etc/passwd is not reliable.
-        login_shell="$(dscl . -read "/Users/$(id -un)" UserShell 2>/dev/null | awk '{print $2}')"
-    elif command -v getent &>/dev/null; then
-        # Linux with LDAP/NIS support.
-        login_shell="$(getent passwd "$(id -un)" | cut -d: -f7)"
-    else
-        login_shell="$(grep "^$(id -un):" /etc/passwd | cut -d: -f7)"
-    fi
+    login_shell="$(get_login_shell)"
 
     local rc
     case "$login_shell" in
