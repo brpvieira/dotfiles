@@ -30,3 +30,29 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	command = "set filetype=html",
 	group = group,
 })
+
+
+vim.api.nvim_create_autocmd("ModeChanged", {
+	desc = "Wrap lines when rendering markdown",
+	group = group,
+	pattern = "markdown:*", -- Triggers when leaving any mode in a markdown file
+	callback = function()
+		local mode = vim.api.nvim_get_mode().mode
+		-- Check if we are entering Normal (n) or Command (c) mode
+		if mode == "n" or mode == "c" or mode == "t" then
+			vim.wo.wrap = true
+		else
+			vim.wo.wrap = false
+		end
+	end,
+})
+
+-- Ensure it's set correctly when first entering a markdown buffer
+vim.api.nvim_create_autocmd("FileType", {
+	desc = "Wrap lines when rendering markdown",
+	group = group,
+	pattern = "markdown",
+	callback = function()
+		vim.wo.wrap = true
+	end,
+})
