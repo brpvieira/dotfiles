@@ -23,3 +23,10 @@ vim.api.nvim_create_autocmd({ "BufWritePre" }, {
 		MiniTrailspace.trim_last_lines()
 	end
 })
+
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+	desc = "Set html syntax for ejs files",
+	pattern = "*.ejs",
+	command = "set filetype=html",
+	group = group,
+})
