@@ -67,13 +67,13 @@ configure_venv_rc() {
     esac
 
     if grep -qF 'venv/bin/activate' "$rc" 2>/dev/null; then
-        printf '[venv] activate line already present in %s\n' "$rc"
+        printf '[venv] activate alias line already present in %s\n' "$rc"
         return 0
     fi
 
     printf '\n# Profile-wide Python venv — managed by dotfiles/setup/python_venv.sh\n' >> "$rc"
-    printf '[ -f "${XDG_DATA_HOME:-$HOME/.local/share}/venv/bin/activate" ] && source "${XDG_DATA_HOME:-$HOME/.local/share}/venv/bin/activate"\n' >> "$rc"
-    printf '[venv] added activate line to %s\n' "$rc"
+    printf '[ -f "${XDG_DATA_HOME:-$HOME/.local/share}/venv/bin/activate" ] && alias venv=\"source ${XDG_DATA_HOME:-$HOME/.local/share}/venv/bin/activate"\n' >> "$rc"
+    printf '[venv] alias added activate line to %s\n' "$rc"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
