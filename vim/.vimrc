@@ -284,6 +284,47 @@ vnoremap <leader>d "_d
 " Run make with F5
 nnoremap <silent> <F5> :silent make! \| redraw!<CR>
 
+" go to file under cursos with splits in normal mode:
+"   - gfh: go to file v-split right
+"   - gfj: go to file split down
+"   - gfk: go to file split up
+"   - gfl: go to file v-split left
+function! OpenFileInSplit(direction)
+  let l:file = expand('<cfile>')
+
+  if !filereadable(l:file)
+    let l:file = expand('%:p:h') . '/' . l:file
+  endif
+
+  if !filereadable(l:file)
+    echo "File not found: " . l:file
+    return
+  endif
+
+  let l:cur_win = winnr()
+
+  " Try to move in the requested direction
+  execute 'wincmd ' . a:direction
+  if winnr() == l:cur_win
+    " No window in that direction — create a split
+    let l:split_cmd = (a:direction ==# 'h') ? 'leftabove vsplit'  :
+                    \ (a:direction ==# 'l') ? 'rightbelow vsplit' :
+                    \ (a:direction ==# 'k') ? 'leftabove split'   :
+                    \                         'rightbelow split'
+    execute l:split_cmd . ' ' . fnameescape(l:file)
+  else
+    " Reuse the existing window in that direction
+    execute 'edit ' . fnameescape(l:file)
+    " Return focus to the original window
+    execute winnr('#') . 'wincmd w'
+  endif
+endfunction
+
+nnoremap <silent> gfh :call OpenFileInSplit('h')<CR>
+nnoremap <silent> gfl :call OpenFileInSplit('l')<CR>
+nnoremap <silent> gfk :call OpenFileInSplit('k')<CR>
+nnoremap <silent> gfj :call OpenFileInSplit('j')<CR>
+
 "------------------------------------------------------------------------------
 " Better QuickFix
 "------------------------------------------------------------------------------
