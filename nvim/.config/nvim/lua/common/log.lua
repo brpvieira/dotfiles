@@ -12,7 +12,10 @@ local default_config = {
   plugin = 'config.nvim',
 
   -- Should print the output to neovim while running
-  use_console = true,
+  use_console = false,
+
+  -- Should use vim.notify to  output to neovim while running
+  use_notify = true,
 
   -- Should highlighting be used in console (using echohl)
   highlights = true,
@@ -24,6 +27,7 @@ local default_config = {
   level = "trace",
 
   -- Level configuration
+
   modes = {
     { name = "trace", hl = "Comment", },
     { name = "debug", hl = "Comment", },
@@ -116,6 +120,22 @@ log.new = function(config, standalone)
 
       if config.highlights and level_config.hl then
         vim.cmd("echohl NONE")
+      end
+    end
+
+    -- Use vim.notify to output message
+    if config.use_notify then
+      local console_string = string.format(
+      "[%-6s%s] %s: %s",
+      nameupper,
+      os.date("%H:%M:%S"),
+      lineinfo,
+      msg
+      )
+
+      local split_console = vim.split(console_string, "\n")
+      for _, v in ipairs(split_console) do
+        vim.notify(string.format("[%s] %s", config.plugin, vim.fn.escape(v, '"')))
       end
     end
 
