@@ -39,3 +39,47 @@ vim.keymap.set("n", "<leader>ws", function()
     MiniTrailspace.trim()
     MiniTrailspace.trim_last_lines()
 end, { desc = 'Trim trailing [w]hite[s]pace'})
+
+
+-- go to file under cursos with splits in normal mode:
+--   - gfh: go to file v-split right
+--   - gfj: go to file split down
+--   - gfk: go to file split up
+--   - gfl: go to file v-split left
+--
+local function open_file_in_split(direction)
+    local file = vim.fn.expand('<cfile>')
+
+    if vim.fn.filereadable(file) == 0 then
+        file = vim.fn.expand('%:p:h') .. '/' .. file
+    end
+
+    if vim.fn.filereadable(file) == 0 then
+        vim.notify('File not found: ' .. file, vim.log.levels.WARN)
+        return
+    end
+
+    local cur_win = vim.fn.winnr()
+
+    vim.cmd('wincmd ' .. direction)
+
+    if vim.fn.winnr() == cur_win then
+        local split_cmd = ({
+            h = 'leftabove vsplit',
+            l = 'rightbelow vsplit',
+            k = 'leftabove split',
+            j = 'rightbelow split',
+        })[direction]
+
+        vim.cmd(split_cmd .. ' ' .. vim.fn.fnameescape(file))
+    else
+        vim.cmd('edit ' .. vim.fn.fnameescape(file))
+        vim.cmd(vim.fn.winnr('#') .. 'wincmd w')
+    end
+end
+
+for _, dir in ipairs({ 'h', 'l', 'k', 'j' }) do
+    vim.keymap.set('n', 'gf' .. dir, function()
+        open_file_in_split(dir)
+    end, { silent = true, desc = 'Open file in split to the ' .. ({ h='left', l='right', k='up', j='down' })[dir] })
+end

@@ -289,6 +289,7 @@ nnoremap <silent> <F5> :silent make! \| redraw!<CR>
 "   - gfj: go to file split down
 "   - gfk: go to file split up
 "   - gfl: go to file v-split left
+
 function! OpenFileInSplit(direction)
   let l:file = expand('<cfile>')
 
