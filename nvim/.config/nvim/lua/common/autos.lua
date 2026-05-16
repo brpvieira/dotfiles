@@ -32,17 +32,25 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 })
 
 
+local function toggle_wrap(toggle)
+	vim.wo.wrap = toggle
+	vim.wo.colorcolumn = toggle and "" or vim.g.colorcolumn
+end
+
 vim.api.nvim_create_autocmd("ModeChanged", {
 	desc = "Wrap lines when rendering markdown",
 	group = group,
-	pattern = "markdown:*", -- Triggers when leaving any mode in a markdown file
+	pattern = "*",
 	callback = function()
+		if vim.bo.filetype ~= "markdown" then
+			return
+		end
 		local mode = vim.api.nvim_get_mode().mode
 		-- Check if we are entering Normal (n) or Command (c) mode
 		if mode == "n" or mode == "c" or mode == "t" then
-			vim.wo.wrap = true
+			toggle_wrap(true)
 		else
-			vim.wo.wrap = false
+			toggle_wrap(false)
 		end
 	end,
 })
@@ -53,6 +61,6 @@ vim.api.nvim_create_autocmd("FileType", {
 	group = group,
 	pattern = "markdown",
 	callback = function()
-		vim.wo.wrap = true
+		toggle_wrap(true)
 	end,
 })

@@ -47,8 +47,8 @@ vim.o.signcolumn = "yes"
 vim.opt.isfname:append("@-@") -- fixes gf for files with "@" in filename
 
 vim.opt.updatetime = 125
-
-vim.opt.colorcolumn = "80"
+vim.g.colorcolumn = "80"
+vim.opt.colorcolumn = vim.g.colorcolumn
 
 -- Decrease mapped sequence wait time
 vim.o.timeoutlen = 500
