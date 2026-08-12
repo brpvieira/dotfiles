@@ -85,6 +85,10 @@ install_with_apt() {
 }
 
 install_xstow() {
+    if command -v xstow &>/dev/null; then
+        echo "xstow already installed, skipped." >&2
+        return 0
+    fi
     if command -v brew &>/dev/null; then
         install_with_brew
     elif command -v apt &>/dev/null; then
