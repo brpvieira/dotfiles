@@ -1,7 +1,8 @@
 return {
   "mfussenegger/nvim-dap",
   dependencies = {
-    -- Optional but highly recommended: creates an beautiful IDE-like debugging UI
+    -- Optional but highly recommended: creates an beautiful IDE-like
+    -- debugging UI
     {
       "rcarriga/nvim-dap-ui",
       dependencies = { "nvim-neotest/nvim-nio" },
@@ -9,21 +10,71 @@ return {
         local dap, dapui = require("dap"), require("dapui")
         dapui.setup()
         -- Auto open/close layout windows when debugging starts/stops
-        dap.listeners.after.event_initialized["dapui_config"] = function() dapui.open() end
-        dap.listeners.before.event_terminated["dapui_config"] = function() dapui.close() end
-        dap.listeners.before.event_exited["dapui_config"] = function() dapui.close() end
+        dap.listeners.after.event_initialized["dapui_config"] = function()
+          dapui.open()
+        end
+        dap.listeners.before.event_terminated["dapui_config"] = function()
+          dapui.close()
+        end
+        dap.listeners.before.event_exited["dapui_config"] = function()
+          dapui.close()
+        end
       end
     }
   },
   config = function()
     local dap = require("dap")
+
+    -- Gutter signs (requires a Nerd Font, e.g. JetBrainsMono Nerd Font)
+    vim.fn.sign_define('DapBreakpoint', {
+      text = "\u{f111}", -- nf-fa-circle
+      texthl = 'DapBreakpoint',
+      linehl = '',
+      numhl = '',
+    })
+    vim.fn.sign_define('DapBreakpointCondition', {
+      text = "\u{f059}", -- nf-fa-question_circle
+      texthl = 'DapBreakpointCondition',
+      linehl = '',
+      numhl = '',
+    })
+    vim.fn.sign_define('DapLogPoint', {
+      text = "\u{f075}", -- nf-fa-comment
+      texthl = 'DapLogPoint',
+      linehl = '',
+      numhl = '',
+    })
+    vim.fn.sign_define('DapStopped', {
+      text = "\u{f04b}", -- nf-fa-play
+      texthl = 'DapStopped',
+      linehl = 'DapStoppedLine',
+      numhl = 'DapStopped',
+    })
+    vim.fn.sign_define('DapBreakpointRejected', {
+      text = "\u{f05e}", -- nf-fa-ban
+      texthl = 'DapBreakpointRejected',
+      linehl = '',
+      numhl = '',
+    })
+
+    vim.api.nvim_set_hl(0, 'DapBreakpoint', { fg = '#e51400' })
+    vim.api.nvim_set_hl(0, 'DapBreakpointCondition', { fg = '#e5b400' })
+    vim.api.nvim_set_hl(0, 'DapLogPoint', { fg = '#61afef' })
+    vim.api.nvim_set_hl(0, 'DapStopped', { fg = '#98c379' })
+    vim.api.nvim_set_hl(0, 'DapBreakpointRejected', { fg = '#888888' })
+    vim.api.nvim_set_hl(0, 'DapStoppedLine', {
+      default = true,
+      link = 'Visual',
+    })
+
     -- Modern JS/TS Debugger Adapter Configuration
     dap.adapters['pwa-node'] = {
       type = 'server',
       host = '127.0.0.1',
       port = '${port}',
       executable = {
-        command = 'js-debug-adapter', -- Managed & exposed globally via Mason paths
+        -- Managed & exposed globally via Mason paths
+        command = 'js-debug-adapter',
         args = { '${port}' },
       }
     }
@@ -78,25 +129,29 @@ return {
 
       return require('dap.utils').pick_process({
         filter = function(proc)
-          -- proc.name holds the full command line (ps ah CMD column), not just the binary name
+          -- proc.name holds the full command line (ps ah CMD column), not
+          -- just the binary name
           local cmd = proc.name:lower()
 
           -- 1. Ensure it's a node process
           local is_node = string.find(cmd, "node") ~= nil
 
-          -- 2. Only actual debug targets expose --inspect(-brk) as their own flag.
-          -- This also excludes wrapper processes (e.g. mocha.js) that merely
-          -- forward it to a spawned child via --node-option.
+          -- 2. Only actual debug targets expose --inspect(-brk) as their
+          -- own flag. This also excludes wrapper processes (e.g. mocha.js)
+          -- that merely forward it to a spawned child via --node-option.
           local is_debuggable = string.find(cmd, "%-%-inspect") ~= nil
 
-          -- 3. Ensure the full command string contains your workspace folder path
-          -- (Using vim.pesc to safely escape special path characters like dashes/dots)
-          local matches_workspace = string.find(cmd, vim.pesc(workspace:lower())) ~= nil
+          -- 3. Ensure the full command string contains your workspace
+          -- folder path (using vim.pesc to safely escape special path
+          -- characters like dashes/dots)
+          local matches_workspace =
+            string.find(cmd, vim.pesc(workspace:lower())) ~= nil
 
           return is_node and is_debuggable and matches_workspace
         end,
         label = function(proc)
-          local target = target_file_relative_to_workspace(proc.name, workspace)
+          local target =
+            target_file_relative_to_workspace(proc.name, workspace)
           return string.format("id=%d %s", proc.pid, target)
         end,
       })
@@ -110,13 +165,15 @@ return {
         localRoot = vim.fn.getcwd(),
         remoteRoot = vim.fn.getcwd(),
 
-        -- Force the debugger to scan everything in the workspace folder for mapping matches
+        -- Force the debugger to scan everything in the workspace folder
+        -- for mapping matches
         resolveSourceMapLocations = {
           "${workspaceFolder}/**",
           "!**/node_modules/**"
         },
 
-        -- Allows breakpoints to bind cleanly to code using native ES Modules (import/export)
+        -- Allows breakpoints to bind cleanly to code using native ES
+        -- Modules (import/export)
         attachExistingChildren = false,
 
         skipFiles = { "<node_internals>/**" },
@@ -127,7 +184,8 @@ return {
       "--reporter", "tap",
       "--no-color", -- suppress colored output
       "--bail", -- stop after first failure
-      "--no-timeouts", -- don't let mocha kill the test while you're stepping through code
+      -- don't let mocha kill the test while you're stepping through code
+      "--no-timeouts",
     }
 
     -- Language Configurations
@@ -179,7 +237,7 @@ return {
         program = "${workspaceFolder}/node_modules/mocha/bin/_mocha",
         args = assign({
           "--spec", "${workspaceFolder}/tests/**/*.test.js",
-          "--exclude","${workspaceFolder}/tests/**/*.external.test.js"
+          "--exclude", "${workspaceFolder}/tests/**/*.external.test.js",
         }, mocha_args),
         console = "integratedTerminal",
       }),
@@ -189,13 +247,41 @@ return {
     dap.configurations.javascript = js_config
     dap.configurations.typescript = js_config
 
-    vim.keymap.set('n', '<F5>', function() require('dap').continue() end, { desc = "DAP Continue / Start" })
-    vim.keymap.set('n', '<F6>', function() require('dap').step_into() end, { desc = "DAP Step Into" })
-    vim.keymap.set('n', '<F7>', function() require('dap').step_out() end, { desc = "DAP Step Out" })
-    vim.keymap.set('n', '<F8>', function() require('dap').step_over() end, { desc = "DAP Step Over" })
-    vim.keymap.set('n', '<F9>', function() require('dap').toggle_breakpoint() end, { desc = "DAP Toggle Breakpoint" })
-    vim.keymap.set('n', '<Leader>B', function() require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: ')) end, { desc = "DAP Conditional Breakpoint" })
-    vim.keymap.set('n', '<Leader>ui', function() require('dapui').toggle() end, { desc = "DAP Toggle UI Layout" })
-    vim.keymap.set('n', '<leader>dc', function() require('dap').run_to_cursor() end, { desc = 'Debug: Run to Cursor' })
+    vim.keymap.set('n', '<F5>', function()
+      require('dap').continue()
+    end, { desc = "DAP Continue / Start" })
+
+    vim.keymap.set('n', '<F6>', function()
+      require('dap').step_into()
+    end, { desc = "DAP Step Into" })
+
+    vim.keymap.set('n', '<F7>', function()
+      require('dap').step_out()
+    end, { desc = "DAP Step Out" })
+
+    vim.keymap.set('n', '<F8>', function()
+      require('dap').step_over()
+    end, { desc = "DAP Step Over" })
+
+    vim.keymap.set('n', '<F9>', function()
+      require('dap').toggle_breakpoint()
+    end, { desc = "DAP Toggle Breakpoint" })
+
+    vim.keymap.set('n', '<Leader>B', function()
+      require('dap').set_breakpoint(vim.fn.input('Breakpoint condition: '))
+    end, { desc = "DAP Conditional Breakpoint" })
+
+    vim.keymap.set('n', '<Leader>L', function()
+      require('dap').set_breakpoint(
+        nil, nil, vim.fn.input('Log point message: '))
+    end, { desc = 'Set Log Point' })
+
+    vim.keymap.set('n', '<Leader>ui', function()
+      require('dapui').toggle()
+    end, { desc = "DAP Toggle UI Layout" })
+
+    vim.keymap.set('n', '<leader>dc', function()
+      require('dap').run_to_cursor()
+    end, { desc = 'Debug: Run to Cursor' })
   end,
 }
