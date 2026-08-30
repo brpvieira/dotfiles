@@ -157,6 +157,30 @@ return {
       })
     end
 
+    -- Helper function to find a specific debugger port for a PID
+    local function get_debug_port_by_pid(pid)
+      if not pid or pid == "" then return nil end
+
+      -- Command: Target TCP listening ports for this PID specifically
+      local cmd = string.format("lsof -a -iTCP -sTCP:LISTEN -p %s -F n", pid)
+      local handle = io.popen(cmd)
+      if not handle then return nil end
+
+      local result = handle:read("*a")
+      handle:close()
+
+      -- Loop through all found listening ports in the output (a process
+      -- can have multiple lines of output if listening on multiple ports)
+      for port_str in result:gmatch(":(%d+)") do
+        local port = tonumber(port_str)
+        -- Check if the found port falls in the standard Node.js debug range
+        if port >= 9229 and port <= 9249 then
+          return port
+        end
+      end
+      return nil
+    end
+
     local js_defaults = {
         type = "pwa-node",
         cwd = vim.fn.getcwd(),
@@ -198,8 +222,27 @@ return {
       assign(js_defaults, {
         name = "Attach to Running Process",
         request = "attach",
-        processId = get_process,
+        -- dap evaluates each function-valued config field independently
+        -- (with no arguments, and in no guaranteed order), so `port` can't
+        -- depend on a sibling `processId` field. Pick the process and look
+        -- up its port in the same function instead.
+        port = function()
+          local pid = get_process()
+          if pid == require('dap').ABORT then
+            return pid
+          end
+
+          local port = get_debug_port_by_pid(pid)
+          if not port then
+            vim.notify(
+              "No debug port found in 9229-9249 range for PID " .. pid,
+              vim.log.levels.WARN)
+            return tonumber(vim.fn.input('Enter port manually: ', '9229'))
+          end
+          return port
+        end,
       }),
+
       assign(js_defaults, {
         name = "Debug Mocha (current file)",
         request = "launch",
